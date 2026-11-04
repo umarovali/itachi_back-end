@@ -1,0 +1,58 @@
+# Render Blueprint: Dashboard → New → Blueprint → выбрать этот репозиторий.
+# Создаёт веб-сервис (Node) и PostgreSQL на бесплатных тарифах.
+# Значения с `sync: false` Render спросит при создании — их нет в репозитории.
+services:
+  - type: web
+    name: totup-backend
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    # devDependencies нужны для сборки (nest cli, typescript)
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.18.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: totup-db
+          property: connectionString
+      # тестовый сервер: схема создаётся автоматически. Для боевого — false + миграции
+      - key: DB_SYNC
+        value: "true"
+      - key: SWAGGER_ENABLED
+        value: "true"
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      # фронтенд на другом домене → cookies должны быть SameSite=None; Secure
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: BASE_CURRENCY
+        value: RUB
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SUPERADMIN_PHONE
+        sync: false
+      - key: SUPERADMIN_PASSWORD
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_BOT_USERNAME
+        sync: false
+      - key: TELEGRAM_ADMIN_CHAT_ID
+        sync: false
+
+databases:
+  - name: totup-db
+    plan: free
+    region: frankfurt
+    databaseName: totup
+    user: totup
